@@ -11,6 +11,8 @@
 #include "journal.hxx"
 
 #include <cassert>
+#include <cstring>
+#include <stdexcept>
 
 using namespace atomic_install;
 
@@ -25,6 +27,10 @@ File::File(const char* rel_path, const std::string& full_path)
 		md5 = st.data_md5();
 		mtime = st.st_mtime;
 	}
+}
+
+File::File()
+{
 }
 
 PathBuffer::PathBuffer(const std::string& root)
@@ -56,7 +62,7 @@ const char* PathBuffer::get_relative_path() const
 	return c_str() + _prefix_len;
 }
 
-Journal::Journal(const char* source, const char* dest)
+Journal::Journal(const std::string& source, const std::string& dest)
 	: _source(source),
 	_dest(dest)
 {
@@ -92,4 +98,75 @@ void Journal::scan_files()
 				i->file_type != FileType::directory && i != _files.end();
 				++i, ++start_n);
 	}
+}
+
+static const char magic_start[4] = { 'A', 'I', 'j', '!' };
+static const char magic_end[4] = { '!', 'A', 'I', 'j' };
+
+void Journal::save_journal(const char* path)
+{
+	StdIOFile f(path, "wb");
+
+	f.write(magic_start, sizeof(magic_start));
+	f.write_string(_source);
+	f.write_string(_dest);
+
+	for (_files_type::iterator i = _files.begin();
+			i != _files.end();
+			++i)
+	{
+		unsigned char ft = i->file_type;
+		f.write(&ft, sizeof(ft));
+
+		f.write_string(i->path);
+		f.write(i->md5.data, sizeof(i->md5.data));
+		f.write(&i->mtime, sizeof(i->mtime));
+	}
+
+	// terminator
+	unsigned char ft = FileType::n_types;
+	f.write(&ft, sizeof(ft));
+
+	// another magic to ensure complete write
+	f.write(magic_end, sizeof(magic_end));
+}
+
+Journal Journal::read_journal(const char* path)
+{
+	StdIOFile f(path);
+
+	char magic_buf[sizeof(magic_start)];
+	f.read_exact(magic_buf, sizeof(magic_buf));
+	if (memcmp(magic_buf, magic_start, sizeof(magic_buf)))
+		throw std::runtime_error("Journal magic invalid.");
+
+	std::string source, dest;
+	f.read_string(source);
+	f.read_string(dest);
+
+	Journal j(source, dest);
+
+	while (1)
+	{
+		unsigned char ft;
+		f.read_exact(&ft, sizeof(ft));
+
+		if (ft == FileType::n_types)
+			break;
+
+		File sub_f;
+		sub_f.file_type = static_cast<FileType::enum_type>(ft);
+		f.read_string(sub_f.path);
+		f.read_exact(sub_f.md5.data, sizeof(sub_f.md5));
+		f.read_exact(&sub_f.mtime, sizeof(sub_f.mtime));
+
+		j._files.push_back(sub_f);
+	}
+
+	char magic_buf2[sizeof(magic_end)];
+	f.read_exact(magic_buf2, sizeof(magic_buf2));
+	if (memcmp(magic_buf2, magic_end, sizeof(magic_buf2)))
+		throw std::runtime_error("Journal end magic invalid.");
+
+	return j;
 }

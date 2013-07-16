@@ -20,6 +20,7 @@ namespace atomic_install
 	{
 	public:
 		File(const char* rel_path, const std::string& root_path);
+		File();
 
 		std::string path;
 		FileType file_type;
@@ -56,10 +57,13 @@ namespace atomic_install
 	public:
 		// Instantiate a new, empty journal for copying files
 		// from @source to @dest.
-		Journal(const char* source, const char* dest);
+		Journal(const std::string& source, const std::string& dest);
 
 		// Scan source directory and add files from it to the journal.
 		void scan_files();
+
+		void save_journal(const char* path);
+		static Journal read_journal(const char* path);
 	};
 };
 

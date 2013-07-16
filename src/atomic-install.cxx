@@ -21,5 +21,7 @@ int main(int argc, char* argv[])
 	std::cerr << "Scanning files..." << std::endl;
 	j.scan_files();
 
+	j.save_journal("journal.tmp");
+
 	return 0;
 }

@@ -64,6 +64,13 @@ namespace atomic_install
 		StdIOFile(const std::string& path, const char* mode = "rb");
 		~StdIOFile();
 
+		size_t read(void* buf, size_t len);
+		void read_exact(void* buf, size_t len);
+		void write(const void* buf, size_t len);
+
+		void read_string(std::string& out);
+		void write_string(const std::string& s);
+
 		operator FILE*();
 	};
 
@@ -84,6 +91,7 @@ namespace atomic_install
 		enum_type _val;
 
 	public:
+		FileType();
 		FileType(enum_type val);
 		operator enum_type() const;
 	};

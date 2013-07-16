@@ -94,6 +94,78 @@ StdIOFile::~StdIOFile()
 		throw POSIXIOException("fclose() failed", _path);
 }
 
+size_t StdIOFile::read(void* _buf, size_t len)
+{
+	char* buf = static_cast<char*>(_buf);
+	size_t sret = 0;
+
+	do
+	{
+		size_t ret = fread(buf, 1, len, _f);
+
+		if (ret < len && ferror(_f))
+			throw POSIXIOException("fread() failed", _path);
+
+		sret += ret;
+		buf += ret;
+		len -= ret;
+
+		if (ret == 0 && feof(_f))
+			break;
+	} while (len > 0);
+
+	return sret;
+}
+
+void StdIOFile::read_exact(void* buf, size_t len)
+{
+	if (read(buf, len) < len)
+		throw POSIXIOException("Short read occured", _path);
+}
+
+void StdIOFile::write(const void* _buf, size_t len)
+{
+	const char* buf = static_cast<const char*>(_buf);
+
+	do
+	{
+		size_t ret = fwrite(buf, 1, len, _f);
+
+		if (ret < len && ferror(_f))
+			throw POSIXIOException("fwrite() failed", _path);
+
+		buf += ret;
+		len -= ret;
+	} while (len > 0);
+}
+
+void StdIOFile::read_string(std::string& out)
+{
+	size_t len;
+	char buf[4096];
+
+	read_exact(&len, sizeof(len));
+	out.clear();
+	out.reserve(len);
+
+	while (len > 0)
+	{
+		size_t rd = len > sizeof(buf) ? sizeof(buf) : len;
+		read_exact(buf, rd);
+		out.append(buf, rd);
+
+		len -= rd;
+	};
+}
+
+void StdIOFile::write_string(const std::string& s)
+{
+	size_t len = s.size();
+
+	write(&len, sizeof(len));
+	write(s.data(), len);
+}
+
 StdIOFile::operator FILE*()
 {
 	return _f;
@@ -103,6 +175,11 @@ FileType::FileType(enum_type val)
 	: _val(val)
 {
 	assert(val < n_types);
+}
+
+FileType::FileType()
+	: _val(n_types)
+{
 }
 
 FileType::operator enum_type() const
@@ -157,10 +234,8 @@ FileStat::FileStat(const std::string& path)
 		while (!feof(f))
 		{
 			char buf[4096];
-			size_t ret = fread(buf, 1, sizeof(buf), f);
+			size_t ret = f.read(buf, sizeof(buf));
 
-			if (ret < sizeof(buf) && ferror(f))
-				throw POSIXIOException("fread() failed", path);
 			md5.feed(buf, ret);
 		}
 
