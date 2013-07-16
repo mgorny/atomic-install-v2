@@ -11,7 +11,6 @@
 #include "journal.hxx"
 
 #include <cassert>
-#include <iostream>
 
 using namespace atomic_install;
 
@@ -22,10 +21,10 @@ File::File(const char* rel_path, const std::string& full_path)
 
 	file_type = st.file_type();
 	if (file_type == FileType::regular_file)
+	{
 		md5 = st.data_md5();
-
-	std::cerr << full_path << " (" << rel_path << "):"
-		<< file_type << ", md5: " << md5.as_hex() << std::endl;
+		mtime = st.st_mtime;
+	}
 }
 
 PathBuffer::PathBuffer(const std::string& root)
