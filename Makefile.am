@@ -3,6 +3,8 @@ ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = atomic-install
 
 atomic_install_SOURCES = \
+	src/journal.cxx src/journal.hxx \
+	src/posixio.cxx src/posixio.hxx \
 	src/atomic-install.cxx
 atomic_install_CPPFLAGS = $(LIBCOPYFILE_CFLAGS)
 atomic_install_LDADD = $(LIBCOPYFILE_LIBS)

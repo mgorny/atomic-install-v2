@@ -8,7 +8,15 @@
 #	include "config.h"
 #endif
 
+#include "journal.hxx"
+
+using namespace atomic_install;
+
 int main(int argc, char* argv[])
 {
+	Journal j("/var/tmp/1", "/var/tmp/2");
+
+	j.scan_files();
+
 	return 0;
 }
