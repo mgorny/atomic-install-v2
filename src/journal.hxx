@@ -23,6 +23,7 @@ namespace atomic_install
 
 		std::string path;
 		FileType file_type;
+		BinMD5 md5;
 	};
 
 	class PathBuffer : public std::string

@@ -21,8 +21,11 @@ File::File(const char* rel_path, const std::string& full_path)
 	FileStat st(full_path);
 
 	file_type = st.file_type();
+	if (file_type == FileType::regular_file)
+		md5 = st.data_md5();
 
-	std::cerr << full_path << " (" << rel_path << "):" << file_type << std::endl;
+	std::cerr << full_path << " (" << rel_path << "):"
+		<< file_type << ", md5: " << md5.as_hex() << std::endl;
 }
 
 PathBuffer::PathBuffer(const std::string& root)

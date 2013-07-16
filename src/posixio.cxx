@@ -12,7 +12,6 @@
 
 #include <cassert>
 #include <cerrno>
-#include <cstdio>
 #include <cstring>
 #include <stdexcept>
 
@@ -82,6 +81,24 @@ DirectoryScanner& DirectoryScanner::operator++()
 	return *this;
 }
 
+StdIOFile::StdIOFile(const std::string& path, const char* mode)
+	: _f(fopen(path.c_str(), mode)), _path(path)
+{
+	if (!_f)
+		throw POSIXIOException("fopen() failed", path);
+}
+
+StdIOFile::~StdIOFile()
+{
+	if (fclose(_f))
+		throw POSIXIOException("fclose() failed", _path);
+}
+
+StdIOFile::operator FILE*()
+{
+	return _f;
+}
+
 FileType::FileType(enum_type val)
 	: _val(val)
 {
@@ -93,10 +110,62 @@ FileType::operator enum_type() const
 	return _val;
 }
 
+std::string BinMD5::as_hex()
+{
+	std::string ret;
+	char digits[] = "0123456789abcdef";
+
+	for (int i = 0; i < 16; ++i)
+	{
+		ret.push_back(digits[(data[i] & 0xf0) >> 4]);
+		ret.push_back(digits[data[i] & 0x0f]);
+	}
+
+	return ret;
+}
+
+MD5Counter::MD5Counter(const std::string& path)
+	: _path(path)
+{
+	if (!MD5_Init(&_ctx))
+		throw POSIXIOException("MD5_Init() failed", path);
+}
+
+void MD5Counter::feed(const char* buf, unsigned long len)
+{
+	if (!MD5_Update(&_ctx, buf, len))
+		throw POSIXIOException("MD5_Update() failed", _path);
+}
+
+void MD5Counter::finish(BinMD5& out)
+{
+	if (!MD5_Final(out.data, &_ctx))
+		throw POSIXIOException("MD5_Final() failed", _path);
+}
+
 FileStat::FileStat(const std::string& path)
 {
 	if (lstat(path.c_str(), this))
 		throw POSIXIOException("lstat() failed", path);
+
+	// count md5 for regular files
+	if (file_type() == FileType::regular_file)
+	{
+		StdIOFile f(path);
+		MD5Counter md5(path);
+
+		while (!feof(f))
+		{
+			char buf[4096];
+			size_t ret = fread(buf, 1, sizeof(buf), f);
+
+			if (ret < sizeof(buf) && ferror(f))
+				throw POSIXIOException("fread() failed", path);
+			md5.feed(buf, ret);
+		}
+
+		md5.finish(_md5);
+	}
 }
 
 FileType FileStat::file_type()
@@ -108,4 +177,12 @@ FileType FileStat::file_type()
 	else
 		// TODO: a better exception
 		throw std::runtime_error("unknown file type");
+}
+
+BinMD5 FileStat::data_md5()
+{
+	if (file_type() == FileType::regular_file)
+		return _md5;
+	else
+		throw std::logic_error("data_md5() is valid on regular files only");
 }

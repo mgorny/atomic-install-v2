@@ -12,12 +12,15 @@
 #include <exception>
 #include <iterator>
 #include <string>
+#include <cstdio>
 
 extern "C"
 {
 #	include <sys/stat.h>
 #	include <sys/types.h>
 #	include <dirent.h>
+
+#	include <openssl/md5.h>
 };
 
 namespace atomic_install
@@ -52,6 +55,18 @@ namespace atomic_install
 		DirectoryScanner& operator++();
 	};
 
+	class StdIOFile
+	{
+		const std::string& _path;
+		FILE* _f;
+
+	public:
+		StdIOFile(const std::string& path, const char* mode = "rb");
+		~StdIOFile();
+
+		operator FILE*();
+	};
+
 	class FileType
 	{
 	public:
@@ -73,12 +88,34 @@ namespace atomic_install
 		operator enum_type() const;
 	};
 
+	struct BinMD5
+	{
+		unsigned char data[16];
+
+		std::string as_hex();
+	};
+
+	class MD5Counter
+	{
+		const std::string& _path;
+		MD5_CTX _ctx;
+
+	public:
+		MD5Counter(const std::string& path);
+
+		void feed(const char* buf, unsigned long len);
+		void finish(BinMD5& out);
+	};
+
 	class FileStat : public stat
 	{
+		BinMD5 _md5;
+
 	public:
 		FileStat(const std::string& path);
 
 		FileType file_type();
+		BinMD5 data_md5();
 	};
 };
 
