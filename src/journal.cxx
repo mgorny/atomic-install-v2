@@ -10,6 +10,7 @@
 
 #include "journal.hxx"
 
+#include <cassert>
 #include <iostream>
 
 using namespace atomic_install;
@@ -27,16 +28,17 @@ File::File(const char* rel_path, const std::string& full_path)
 PathBuffer::PathBuffer(const std::string& root)
 	: std::string(root)
 {
-	*this += '/';
 	_prefix_len = size();
 	_directory_len = _prefix_len;
 }
 
 void PathBuffer::set_directory(const std::string& rel_path)
 {
+	assert(rel_path[0] == '/');
+
 	erase(_prefix_len);
 	*this += rel_path;
-	if (rel_path.size() > 0)
+	if (rel_path != "/")
 		*this += '/';
 	_directory_len = size();
 }
@@ -62,7 +64,7 @@ void Journal::scan_files()
 {
 	PathBuffer path_buf(_source);
 
-	File root("", _source);
+	File root("/", _source);
 	_files.push_back(root);
 
 	// directories change _files, so we need to use indexes
