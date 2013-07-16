@@ -1,0 +1,16 @@
+AC_PREREQ([2.60])
+AC_INIT([atomic-install], [0])
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([1.6 foreign dist-bzip2 subdir-objects])
+
+AC_PROG_CXX
+AC_USE_SYSTEM_EXTENSIONS
+
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+
+PKG_CHECK_MODULES([LIBCOPYFILE], [libcopyfile])
+
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
