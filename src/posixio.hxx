@@ -57,8 +57,11 @@ namespace atomic_install
 
 	class StdIOFile
 	{
+	protected: // for AtomicIOFile
 		const std::string& _path;
 		FILE* _f;
+
+		StdIOFile(const std::string& path, int dummy);
 
 	public:
 		StdIOFile(const std::string& path, const char* mode = "rb");
@@ -72,6 +75,15 @@ namespace atomic_install
 		void write_string(const std::string& s);
 
 		operator FILE*();
+	};
+
+	class AtomicIOFile : public StdIOFile
+	{
+		std::string _tmp_path;
+
+	public:
+		AtomicIOFile(const std::string& path, const char* mode = "wb");
+		~AtomicIOFile();
 	};
 
 	class FileType

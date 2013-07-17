@@ -12,8 +12,14 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
+
+extern "C"
+{
+#	include <libcopyfile.h>
+};
 
 using namespace atomic_install;
 
@@ -86,6 +92,11 @@ StdIOFile::StdIOFile(const std::string& path, const char* mode)
 {
 	if (!_f)
 		throw POSIXIOException("fopen() failed", path);
+}
+
+StdIOFile::StdIOFile(const std::string& path, int dummy)
+	: _f(0), _path(path)
+{
 }
 
 StdIOFile::~StdIOFile()
@@ -169,6 +180,35 @@ void StdIOFile::write_string(const std::string& s)
 StdIOFile::operator FILE*()
 {
 	return _f;
+}
+
+AtomicIOFile::AtomicIOFile(const std::string& path, const char* mode)
+	: StdIOFile(path, 1)
+{
+	char* tmpl = new char[path.size() + 8];
+	const char template_suffix[] = ".XXXXXX";
+
+	memcpy(tmpl, path.data(), path.size());
+	memcpy(tmpl + path.size(), template_suffix, sizeof(template_suffix));
+
+	int fd = mkstemp(tmpl);
+
+	if (fd != -1)
+		_tmp_path = tmpl;
+	delete tmpl;
+
+	if (fd == -1)
+		throw POSIXIOException("mkstemp() failed", path);
+	_f = fdopen(fd, mode);
+}
+
+AtomicIOFile::~AtomicIOFile()
+{
+	copyfile_error_t ret = copyfile_move_file(
+			_tmp_path.c_str(), _path.c_str(), 0, 0, 0);
+
+	if (ret)
+		throw POSIXIOException(copyfile_error_message(ret), _tmp_path);
 }
 
 FileType::FileType(enum_type val)

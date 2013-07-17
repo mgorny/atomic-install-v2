@@ -105,7 +105,7 @@ static const char magic_end[4] = { '!', 'A', 'I', 'j' };
 
 void Journal::save_journal(const char* path)
 {
-	StdIOFile f(path, "wb");
+	AtomicIOFile f(path, "wb");
 
 	f.write(magic_start, sizeof(magic_start));
 	f.write_string(_source);
