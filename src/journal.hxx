@@ -59,11 +59,11 @@ namespace atomic_install
 		// from @source to @dest.
 		Journal(const std::string& source, const std::string& dest);
 
-		// Scan source directory and add files from it to the journal.
-		void scan_files();
-
 		void save_journal(const char* path);
 		static Journal read_journal(const char* path);
+
+		// Scan source directory and add files from it to the journal.
+		void scan_files();
 	};
 };
 

@@ -68,38 +68,6 @@ Journal::Journal(const std::string& source, const std::string& dest)
 {
 }
 
-void Journal::scan_files()
-{
-	PathBuffer path_buf(_source);
-
-	File root("/", _source);
-	_files.push_back(root);
-
-	// directories change _files, so we need to use indexes
-	// but for quickly iterating files we can just use iterator
-	for (_files_type::size_type start_n = 0; start_n < _files.size();)
-	{
-		// build the full path
-		path_buf.set_directory(_files[start_n].path);
-		++start_n;
-
-		// scan the directory
-		for (DirectoryScanner dir(path_buf, true);
-				!dir.eof(); ++dir)
-		{
-			path_buf.set_filename(dir->d_name);
-
-			File f(path_buf.get_relative_path(), path_buf);
-			_files.push_back(f);
-		}
-
-		// skip files
-		for (_files_type::iterator i = _files.begin() + start_n;
-				i->file_type != FileType::directory && i != _files.end();
-				++i, ++start_n);
-	}
-}
-
 static const char magic_start[4] = { 'A', 'I', 'j', '!' };
 static const char magic_end[4] = { '!', 'A', 'I', 'j' };
 
@@ -169,4 +137,36 @@ Journal Journal::read_journal(const char* path)
 		throw std::runtime_error("Journal end magic invalid.");
 
 	return j;
+}
+
+void Journal::scan_files()
+{
+	PathBuffer path_buf(_source);
+
+	File root("/", _source);
+	_files.push_back(root);
+
+	// directories change _files, so we need to use indexes
+	// but for quickly iterating files we can just use iterator
+	for (_files_type::size_type start_n = 0; start_n < _files.size();)
+	{
+		// build the full path
+		path_buf.set_directory(_files[start_n].path);
+		++start_n;
+
+		// scan the directory
+		for (DirectoryScanner dir(path_buf, true);
+				!dir.eof(); ++dir)
+		{
+			path_buf.set_filename(dir->d_name);
+
+			File f(path_buf.get_relative_path(), path_buf);
+			_files.push_back(f);
+		}
+
+		// skip files
+		for (_files_type::iterator i = _files.begin() + start_n;
+				i->file_type != FileType::directory && i != _files.end();
+				++i, ++start_n);
+	}
 }
