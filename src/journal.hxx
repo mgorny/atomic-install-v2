@@ -77,6 +77,8 @@ namespace atomic_install
 		void copy_files();
 		// Backup existing files in destdir.
 		void backup_files();
+		// Perform the atomic replacement.
+		void replace();
 	};
 };
 

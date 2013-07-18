@@ -304,3 +304,24 @@ void Journal::backup_files()
 		}
 	}
 }
+
+void Journal::replace()
+{
+	PathBuffer src_buf(_dest, _new_prefix);
+	PathBuffer dst_buf(_dest);
+
+	for (_files_type::iterator i = _files.begin(); i != _files.end(); ++i)
+	{
+		File& f = *i;
+
+		if (f.file_type == FileType::directory)
+			continue;
+
+		src_buf.set_path(f.path);
+		dst_buf.set_path(f.path);
+
+		CopyFile cf(src_buf, dst_buf);
+
+		cf.move();
+	}
+}

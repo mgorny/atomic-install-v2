@@ -29,5 +29,8 @@ int main(int argc, char* argv[])
 	std::cerr << "Backing up files..." << std::endl;
 	j.backup_files();
 
+	std::cerr << "Replacing..." << std::endl;
+	j.replace();
+
 	return 0;
 }
