@@ -25,7 +25,8 @@ extern "C"
 using namespace atomic_install;
 
 File::File(const char* rel_path, const std::string& full_path)
-	: path(rel_path), file_type(FileType::regular_file)
+	: path(rel_path), file_type(FileType::regular_file),
+	existed(false)
 {
 	FileStat st(full_path);
 
@@ -106,6 +107,11 @@ Journal::Journal(const std::string& source, const std::string& dest)
 static const char magic_start[4] = { 'A', 'I', 'j', '!' };
 static const char magic_end[4] = { '!', 'A', 'I', 'j' };
 
+enum file_flags
+{
+	FILE_EXISTED = 1,
+};
+
 void Journal::save_journal(const char* path)
 {
 	AtomicIOFile f(path, "wb");
@@ -127,6 +133,11 @@ void Journal::save_journal(const char* path)
 		f.write_string(i->path);
 		f.write(i->md5.data, sizeof(i->md5.data));
 		f.write(&i->mtime, sizeof(i->mtime));
+
+		unsigned int flags = 0;
+		if (i->existed)
+			flags |= FILE_EXISTED;
+		f.write(&flags, sizeof(flags));
 	}
 
 	// terminator
@@ -168,6 +179,11 @@ Journal Journal::read_journal(const char* path)
 		f.read_string(sub_f.path);
 		f.read_exact(sub_f.md5.data, sizeof(sub_f.md5));
 		f.read_exact(&sub_f.mtime, sizeof(sub_f.mtime));
+
+		unsigned int flags;
+		f.read_exact(&flags, sizeof(flags));
+		if (flags & FILE_EXISTED)
+			sub_f.existed = true;
 
 		j._files.push_back(sub_f);
 	}
@@ -248,9 +264,43 @@ void Journal::copy_files()
 			{
 				if (e.sys_errno == EEXIST)
 					cf.copy_metadata();
+				else
+					throw;
 			};
 		}
 		else
 			cf.link_or_copy();
+	}
+}
+
+void Journal::backup_files()
+{
+	PathBuffer src_buf(_dest);
+	PathBuffer dst_buf(_dest, _backup_prefix);
+
+	for (_files_type::iterator i = _files.begin(); i != _files.end(); ++i)
+	{
+		File& f = *i;
+
+		if (f.file_type == FileType::directory)
+			continue;
+
+		src_buf.set_path(f.path);
+		dst_buf.set_path(f.path);
+
+		CopyFile cf(src_buf, dst_buf);
+
+		try
+		{
+			cf.link_or_copy();
+
+			f.existed = true;
+		}
+		catch (POSIXIOException& e)
+		{
+			// ignore missing files, no need to back them up :).
+			if (e.sys_errno != ENOENT)
+				throw;
+		}
 	}
 }

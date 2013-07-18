@@ -26,5 +26,8 @@ int main(int argc, char* argv[])
 	std::cerr << "Copying files..." << std::endl;
 	j.copy_files();
 
+	std::cerr << "Backing up files..." << std::endl;
+	j.backup_files();
+
 	return 0;
 }

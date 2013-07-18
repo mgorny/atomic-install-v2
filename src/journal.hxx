@@ -26,6 +26,8 @@ namespace atomic_install
 		FileType file_type;
 		BinMD5 md5;
 		time_t mtime;
+
+		bool existed;
 	};
 
 	class PathBuffer : public std::string
@@ -73,6 +75,8 @@ namespace atomic_install
 		void scan_files();
 		// Copy new files to destdir.
 		void copy_files();
+		// Backup existing files in destdir.
+		void backup_files();
 	};
 };
 
