@@ -58,7 +58,8 @@ void CopyFile::link_or_copy()
 
 void CopyFile::copy()
 {
-	wrap_error(copyfile_copy_file(_from.c_str(), _to.c_str(), 0, 0, 0));
+	wrap_error(copyfile_archive_file(_from.c_str(), _to.c_str(),
+				0, 0, 0, 0, 0));
 }
 
 void CopyFile::copy_metadata()
