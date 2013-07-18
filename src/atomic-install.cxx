@@ -23,5 +23,8 @@ int main(int argc, char* argv[])
 
 	j.save_journal("journal.tmp");
 
+	std::cerr << "Copying files..." << std::endl;
+	j.copy_files();
+
 	return 0;
 }

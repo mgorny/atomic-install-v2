@@ -33,11 +33,16 @@ namespace atomic_install
 		std::string::size_type _prefix_len;
 		std::string::size_type _directory_len;
 
+		static const std::string _def_prefix;
+
+		const std::string& _prefix;
+
 	public:
-		PathBuffer(const std::string& root);
+		PathBuffer(const std::string& root, const std::string& prefix = _def_prefix);
 
 		void set_directory(const std::string& rel_path);
 		void set_filename(const std::string& filename);
+		void set_path(const std::string& path);
 
 		const char* get_relative_path() const;
 	};
@@ -46,6 +51,8 @@ namespace atomic_install
 	{
 		std::string _source;
 		std::string _dest;
+
+		std::string _new_prefix, _backup_prefix;
 
 		typedef std::vector<File> _files_type;
 		_files_type _files;
@@ -64,6 +71,8 @@ namespace atomic_install
 
 		// Scan source directory and add files from it to the journal.
 		void scan_files();
+		// Copy new files to destdir.
+		void copy_files();
 	};
 };
 

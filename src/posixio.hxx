@@ -21,6 +21,8 @@ extern "C"
 #	include <dirent.h>
 
 #	include <openssl/md5.h>
+
+#	include <libcopyfile.h>
 };
 
 namespace atomic_install
@@ -30,9 +32,27 @@ namespace atomic_install
 		char _formatted_message[512];
 
 	public:
+		int sys_errno;
+
 		POSIXIOException(const char* message, const std::string& fn);
 
 		virtual const char* what() const throw();
+	};
+
+	class CopyFile
+	{
+		std::string& _from;
+		std::string& _to;
+
+		void wrap_error(copyfile_error_t ret);
+
+	public:
+		CopyFile(std::string& from, std::string& to);
+
+		void move();
+		void link_or_copy();
+		void copy();
+		void copy_metadata();
 	};
 
 	class DirectoryScanner : public std::iterator<

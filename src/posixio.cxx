@@ -16,14 +16,10 @@
 #include <cstring>
 #include <stdexcept>
 
-extern "C"
-{
-#	include <libcopyfile.h>
-};
-
 using namespace atomic_install;
 
 POSIXIOException::POSIXIOException(const char* message, const std::string& fn)
+	: sys_errno(errno)
 {
 	// TODO: shorten too long errors
 	snprintf(_formatted_message, sizeof(_formatted_message),
@@ -36,6 +32,38 @@ POSIXIOException::POSIXIOException(const char* message, const std::string& fn)
 const char* POSIXIOException::what() const throw()
 {
 	return _formatted_message;
+}
+
+CopyFile::CopyFile(std::string& from, std::string& to)
+	: _from(from), _to(to)
+{
+}
+
+void CopyFile::wrap_error(copyfile_error_t ret)
+{
+	// TODO: proper choice of from/to
+	if (ret)
+		throw POSIXIOException(copyfile_error_message(ret), _from);
+}
+
+void CopyFile::move()
+{
+	wrap_error(copyfile_move_file(_from.c_str(), _to.c_str(), 0, 0, 0));
+}
+
+void CopyFile::link_or_copy()
+{
+	wrap_error(copyfile_link_file(_from.c_str(), _to.c_str(), 0, 0, 0));
+}
+
+void CopyFile::copy()
+{
+	wrap_error(copyfile_copy_file(_from.c_str(), _to.c_str(), 0, 0, 0));
+}
+
+void CopyFile::copy_metadata()
+{
+	wrap_error(copyfile_copy_metadata(_from.c_str(), _to.c_str(), 0, 0, 0));
 }
 
 DirectoryScanner::DirectoryScanner(const std::string& name, bool omit_special)
