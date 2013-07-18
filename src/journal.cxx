@@ -19,6 +19,8 @@
 
 extern "C"
 {
+#	include <unistd.h>
+
 #	include <libcopyfile.h>
 };
 
@@ -323,5 +325,25 @@ void Journal::replace()
 		CopyFile cf(src_buf, dst_buf);
 
 		cf.move();
+	}
+}
+
+void Journal::cleanup()
+{
+	PathBuffer new_buf(_dest, _new_prefix);
+	PathBuffer backup_buf(_dest, _backup_prefix);
+
+	for (_files_type::iterator i = _files.begin(); i != _files.end(); ++i)
+	{
+		File& f = *i;
+
+		if (f.file_type == FileType::directory)
+			continue;
+
+		new_buf.set_path(f.path);
+		backup_buf.set_path(f.path);
+
+		unlink(new_buf.c_str());
+		unlink(backup_buf.c_str());
 	}
 }

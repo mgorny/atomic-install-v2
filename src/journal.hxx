@@ -79,6 +79,8 @@ namespace atomic_install
 		void backup_files();
 		// Perform the atomic replacement.
 		void replace();
+		// Remove new & backup files.
+		void cleanup();
 	};
 };
 
