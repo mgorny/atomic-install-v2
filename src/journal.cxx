@@ -19,8 +19,6 @@
 
 extern "C"
 {
-#	include <unistd.h>
-
 #	include <libcopyfile.h>
 };
 
@@ -343,7 +341,43 @@ void Journal::cleanup()
 		new_buf.set_path(f.path);
 		backup_buf.set_path(f.path);
 
-		unlink(new_buf.c_str());
-		unlink(backup_buf.c_str());
+		remove_file(new_buf, true);
+		remove_file(backup_buf, true);
+	}
+}
+
+void Journal::revert()
+{
+	PathBuffer src_buf(_dest, _backup_prefix);
+	PathBuffer dst_buf(_dest);
+
+	for (_files_type::iterator i = _files.begin(); i != _files.end(); ++i)
+	{
+		File& f = *i;
+
+		if (f.file_type == FileType::directory)
+			continue;
+
+		src_buf.set_path(f.path);
+		dst_buf.set_path(f.path);
+
+		if (f.existed)
+		{
+			CopyFile cf(src_buf, dst_buf);
+
+			try
+			{
+				cf.move();
+			}
+			catch (POSIXIOException& e)
+			{
+				// The files may have been reverted already,
+				// i.e. we can be doing a second retry.
+				if (e.sys_errno != ENOENT)
+					throw;
+			}
+		}
+		else
+			remove_file(dst_buf, true);
 	}
 }

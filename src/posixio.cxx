@@ -16,6 +16,11 @@
 #include <cstring>
 #include <stdexcept>
 
+extern "C"
+{
+#	include <unistd.h>
+};
+
 using namespace atomic_install;
 
 POSIXIOException::POSIXIOException(const char* message, const std::string& fn)
@@ -329,4 +334,14 @@ BinMD5 FileStat::data_md5()
 		return _md5;
 	else
 		throw std::logic_error("data_md5() is valid on regular files only");
+}
+
+void atomic_install::remove_file(const std::string& path, bool ignore_nonexist)
+{
+	if (unlink(path.c_str()))
+	{
+		if (ignore_nonexist && errno == ENOENT)
+			return;
+		throw POSIXIOException("Unable to unlink file", path);
+	}
 }

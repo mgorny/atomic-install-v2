@@ -157,6 +157,8 @@ namespace atomic_install
 		FileType file_type();
 		BinMD5 data_md5();
 	};
+
+	void remove_file(const std::string& path, bool ignore_nonexist = false);
 };
 
 #endif /*POSIXIO_HXX*/

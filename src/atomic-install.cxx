@@ -32,6 +32,9 @@ int main(int argc, char* argv[])
 	std::cerr << "Replacing..." << std::endl;
 	j.replace();
 
+	std::cerr << "Reverting..." << std::endl;
+	j.revert();
+
 	j.cleanup();
 
 	return 0;

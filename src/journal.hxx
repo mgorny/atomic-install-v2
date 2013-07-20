@@ -81,6 +81,9 @@ namespace atomic_install
 		void replace();
 		// Remove new & backup files.
 		void cleanup();
+
+		// Revert the started replacement.
+		void revert();
 	};
 };
 
