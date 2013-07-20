@@ -159,6 +159,8 @@ namespace atomic_install
 	};
 
 	void remove_file(const std::string& path, bool ignore_nonexist = false);
+	void remove_dir(const std::string& path, bool ignore_nonexist = false,
+			bool ignore_nonempty = false);
 };
 
 #endif /*POSIXIO_HXX*/

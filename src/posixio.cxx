@@ -345,3 +345,16 @@ void atomic_install::remove_file(const std::string& path, bool ignore_nonexist)
 		throw POSIXIOException("Unable to unlink file", path);
 	}
 }
+
+void atomic_install::remove_dir(const std::string& path, bool ignore_nonexist,
+		bool ignore_nonempty)
+{
+	if (rmdir(path.c_str()))
+	{
+		if (ignore_nonexist && errno == ENOENT)
+			return;
+		if (ignore_nonempty && (errno == EEXIST || errno == ENOTEMPTY))
+			return;
+		throw POSIXIOException("Unable to remove directory", path);
+	}
+}

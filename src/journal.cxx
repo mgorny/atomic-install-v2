@@ -331,18 +331,26 @@ void Journal::cleanup()
 	PathBuffer new_buf(_dest, _new_prefix);
 	PathBuffer backup_buf(_dest, _backup_prefix);
 
-	for (_files_type::iterator i = _files.begin(); i != _files.end(); ++i)
+	for (_files_type::reverse_iterator i = _files.rbegin();
+			i != _files.rend(); ++i)
 	{
 		File& f = *i;
 
-		if (f.file_type == FileType::directory)
-			continue;
+		if (f.file_type != FileType::directory)
+		{
+			new_buf.set_path(f.path);
+			backup_buf.set_path(f.path);
 
-		new_buf.set_path(f.path);
-		backup_buf.set_path(f.path);
+			remove_file(new_buf, true);
+			remove_file(backup_buf, true);
+		}
+		else
+		{
+			// Drop empty directories.
 
-		remove_file(new_buf, true);
-		remove_file(backup_buf, true);
+			new_buf.set_directory(f.path);
+			remove_dir(new_buf);
+		}
 	}
 }
 
